@@ -18,11 +18,22 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
-
+#include "utils.h"
+#include "memory/vaddr.h"
 static int is_batch_mode = false;
 
 void init_regex();
 void init_wp_pool();
+void scan_memory(vaddr_t start, int words) {
+    for (int i = 0; i < words; i++) {
+        vaddr_t addr = start + i * 4;  
+        
+        
+        uint32_t data = vaddr_read(addr, 4);
+        
+        printf("0x%08x:  %08x\n", addr, data);
+    }
+}
 
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 static char* rl_gets() {
@@ -49,9 +60,44 @@ static int cmd_c(char *args) {
 
 
 static int cmd_q(char *args) {
+  nemu_state.state = NEMU_QUIT;
   return -1;
 }
 
+static int cmd_x(char *args){
+  vaddr_t addr; int len;
+   if (sscanf(args, "%d %x", &len, &addr) != 2) {
+        printf("Usage: x <length> <hex_address>\n");
+        return -1;
+    }
+    scan_memory(addr, len);
+    return 0;
+}
+
+
+
+
+static int cmd_info(char *args){
+  if (strcmp(args,"r") == 0){
+    isa_reg_display();
+  }
+   return 0;
+}
+
+static int cmd_si(char *args) {
+  int step_count = 1;
+  if(args != NULL){
+    step_count = atoi(args);
+  if (args <=0 ){
+    printf("Invalid step count : %s\n",args);
+    return 0;
+  }
+}
+  for (int i = 0; i < step_count; i++){
+    cpu_exec(1);
+  }
+  return 0;
+}
 static int cmd_help(char *args);
 
 static struct {
@@ -62,7 +108,9 @@ static struct {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
-
+  { "si", "Single step execution (si N means step N execution further)", cmd_si},
+  { "info", "print out the value", cmd_info},
+  { "x", "print out the memory (x N addr, N means the N constant address after the addr)", cmd_x},
   /* TODO: Add more commands */
 
 };
