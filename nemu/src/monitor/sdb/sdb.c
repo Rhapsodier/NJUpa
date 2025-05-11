@@ -22,6 +22,7 @@
 #include "memory/vaddr.h"
 static int is_batch_mode = false;
 
+bool make_token();
 void init_regex();
 void init_wp_pool();
 void scan_memory(vaddr_t start, int words) {
@@ -74,6 +75,18 @@ static int cmd_x(char *args){
     return 0;
 }
 
+static int cmd_p(char *args) {
+  bool success = true ;  
+  word_t result = expr(args, &success);  
+  
+  if (success) {
+      printf("Result: %u\n", result);
+  } else {
+      printf("Invalid expression\n");
+  }
+  return 0;
+}
+
 
 
 
@@ -111,6 +124,7 @@ static struct {
   { "si", "Single step execution (si N means step N execution further)", cmd_si},
   { "info", "print out the value", cmd_info},
   { "x", "print out the memory (x N addr, N means the N constant address after the addr)", cmd_x},
+  { "p", "print out the value of expression", cmd_p},
   /* TODO: Add more commands */
 
 };
